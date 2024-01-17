@@ -1,0 +1,5 @@
+development:
+  dialect: mysql
+  datasource: root:root@tcp(127.0.0.1:3324)/db-warehouse?parseTime=true
+  dir: migrations
+  table: gorp_migrations
