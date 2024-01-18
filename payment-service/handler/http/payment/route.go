@@ -1,4 +1,4 @@
-package delivery
+package payment
 
 import (
 	"payment-service/usecase"

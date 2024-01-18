@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"delivery-service/repository"
+	"payment-service/repository"
 )
 
 type UseCase struct {

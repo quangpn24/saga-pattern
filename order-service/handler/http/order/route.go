@@ -1,7 +1,7 @@
 package order
 
 import (
-	"go-base/usecase"
+	"order-service/usecase"
 
 	"github.com/labstack/echo/v4"
 )
@@ -11,6 +11,6 @@ type Route struct {
 }
 
 func Init(group *echo.Group, useCase *usecase.UseCase) {
-	r := &Route{useCase: useCase}
+	_ = &Route{useCase: useCase}
 
 }

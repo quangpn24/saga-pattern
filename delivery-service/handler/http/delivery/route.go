@@ -1,4 +1,4 @@
-package order
+package delivery
 
 import (
 	"delivery-service/usecase"

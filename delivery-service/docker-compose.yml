@@ -1,13 +1,13 @@
 version: "3"
 services:
-  db-order:
-    container_name: db-order
+  db-delivery:
+    container_name: db-payment
     image: mysql:8.0.33
     environment:
-      MYSQL_DATABASE: db-order
+      MYSQL_DATABASE: db-payment
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - 3321:3306
+      - 3322:3306
     volumes:
       - mysql:/var/lib/user
     healthcheck:

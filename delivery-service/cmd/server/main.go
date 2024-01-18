@@ -1,14 +1,14 @@
 package main
 
 import (
+	"delivery-service/config"
+	"delivery-service/repository"
+	"delivery-service/usecase"
 	"fmt"
 	"log"
 	"net"
-	"order-service/config"
-	"order-service/repository"
-	"order-service/usecase"
 
-	serviceHttp "order-service/handler/http"
+	serviceHttp "delivery-service/handler/http"
 
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"

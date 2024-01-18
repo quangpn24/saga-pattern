@@ -1,9 +1,9 @@
 package http
 
 import (
+	"delivery-service/handler/http/healthcheck"
+	"delivery-service/usecase"
 	"net/http"
-	"order-service/handler/http/healthcheck"
-	"order-service/usecase"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

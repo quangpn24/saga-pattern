@@ -1,9 +1,9 @@
 package main
 
 import (
-	"delivery-service/config"
 	"fmt"
 	"log"
+	"payment-service/config"
 
 	migrate "github.com/rubenv/sql-migrate"
 	"gorm.io/driver/mysql"
