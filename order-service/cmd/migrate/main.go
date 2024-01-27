@@ -6,7 +6,7 @@ import (
 	"order-service/config"
 
 	migrate "github.com/rubenv/sql-migrate"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -16,13 +16,15 @@ func main() {
 		log.Fatalf("cannot load config: %v\n", err)
 	}
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%v)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
-	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true", confMysql.DBUser, confMysql.DBPass, confMysql.DBHost, confMysql.DBPort)
+	//mysqlDsn := fmt.Sprintf("%s:%s@tcp(%s:%v)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%v sslmode=disable", cfg.DB.Host, cfg.DB.User, cfg.DB.Password, cfg.DB.DBName, cfg.DB.Port)
 
-	dbConn, err := gorm.Open(mysql.Open(dsn), &gorm.Config{TranslateError: true})
+	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{TranslateError: true})
 	if err != nil {
 		log.Fatalf("cannot connecting to db: %v\n", err)
 	}
+
+	dbConn = dbConn.Debug()
 
 	migrations := &migrate.FileMigrationSource{
 		Dir: "migrations",
@@ -33,7 +35,7 @@ func main() {
 		log.Fatalf("cannot get db connection: %v\n", err)
 	}
 
-	total, err := migrate.Exec(sqlDB, "mysql", migrations, migrate.Up)
+	total, err := migrate.Exec(sqlDB, "postgres", migrations, migrate.Up)
 	if err != nil {
 		log.Fatalf("cannot execute migration: %v\n", err)
 	}

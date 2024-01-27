@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"payment-service/config"
+	"payment-service/handler/consumer"
 	"payment-service/repository"
 	"payment-service/usecase"
 
@@ -12,7 +13,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/soheilhy/cmux"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -31,25 +32,30 @@ const VERSION = "1.0.0"
 // @description Transaction API.
 func main() {
 	cfg, _ := config.LoadConfig()
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%v)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
-	//dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true", confMysql.DBUser, confMysql.DBPass, confMysql.DBHost, confMysql.DBPort)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{TranslateError: true})
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%v sslmode=disable", cfg.DB.Host, cfg.DB.User, cfg.DB.Password, cfg.DB.DBName, cfg.DB.Port)
+
+	dbConn, err := gorm.Open(postgres.Open(dsn), &gorm.Config{TranslateError: true})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("cannot connecting to db: %v\n", err)
 	}
 
-	repo := repository.New(db)
+	dbConn = dbConn.Debug()
+
+	repo := repository.New(dbConn)
 	uc := usecase.New(repo)
 
-	//go func() {
-	//	h.Listener = httpL
-	//	errs <- h.Start("")
-	//}()
-	executeServer(uc)
+	runConsumer(uc, cfg)
+	go executeServer(uc, cfg)
 }
-func executeServer(useCase *usecase.UseCase) {
-	cfg, _ := config.LoadConfig()
 
+func runConsumer(uc *usecase.UseCase, cfg *config.Config) {
+	// to consume messages
+	fmt.Println("Start consumer")
+	con := consumer.NewConsumer(uc, cfg)
+	con.Consume()
+}
+func executeServer(useCase *usecase.UseCase, cfg *config.Config) {
 	fmt.Println(`cfg.Port: `, cfg.Port)
 	l, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
@@ -62,7 +68,7 @@ func executeServer(useCase *usecase.UseCase) {
 
 	// http
 	{
-		h := serviceHttp.NewHTTPHandler(useCase)
+		h := serviceHttp.NewHTTPHandler(useCase, cfg)
 		go func() {
 			h.Listener = httpL
 			errs <- h.Start("")

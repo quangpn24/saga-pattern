@@ -1,44 +1,16 @@
 version: "3"
 services:
-  db-payment:
-    container_name: db-payment
-    image: mysql:8.0.33
+  payment-db:
+    container_name: payment-db
+    image: postgres:latest
+    restart: always
     environment:
-      MYSQL_DATABASE: db-payment
-      MYSQL_ROOT_PASSWORD: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: root
     ports:
-      - 3323:3306
+      - 5433:5432
     volumes:
-      - mysql:/var/lib/user
-    healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
-      interval: 30s
-      timeout: 30s
-      retries: 3
-    command:
-      [
-        "mysqld",
-        "--character-set-server=utf8mb4",
-        "--collation-server=utf8mb4_unicode_ci",
-        "--default-authentication-plugin=mysql_native_password"
-      ]
-#  db-test:
-#    container_name: db-test
-#    image: mysql:8.0.33
-#    environment:
-#      MYSQL_DATABASE: db-demo-test
-#      MYSQL_ROOT_PASSWORD: root
-#    ports:
-#      - 33321:3306
-#    volumes:
-#      - go-base-test:/var/lib/user
-#    command:
-#      [
-#        "mysqld",
-#        "--character-set-server=utf8mb4",
-#        "--collation-server=utf8mb4_unicode_ci",
-#        "--default-authentication-plugin=mysql_native_password"
-#      ]
+      - data:/var/lib/postgresql/data
 volumes:
-  mysql:
-#  go-base-test:
+  data:
+    driver: local

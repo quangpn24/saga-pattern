@@ -1,5 +1,5 @@
 development:
-  dialect: mysql
-  datasource: root:root@tcp(127.0.0.1:3323)/db-payment?parseTime=true
+  dialect: postgres
+  datasource: host=127.0.0.1 user=root password=root dbname=postgres port=5433 sslmode=disable
   dir: migrations
   table: gorp_migrations

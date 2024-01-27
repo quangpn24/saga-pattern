@@ -8,16 +8,17 @@ import (
 )
 
 type Config struct {
-	AppEnv       string `envconfig:"APP_ENV"`
-	Port         string `envconfig:"PORT"`
-	AllowOrigins string `envconfig:"ALLOW_ORIGINS"`
+	AppEnv          string `envconfig:"APP_ENV"`
+	Port            string `envconfig:"PORT"`
+	AllowOrigins    string `envconfig:"ALLOW_ORIGINS"`
+	TOKEN_EXPIRE_IN int    `envconfig:"TOKEN_EXPIRE_IN"`
 
 	DB struct {
-		Name      string `envconfig:"DB_NAME"`
+		DBName    string `envconfig:"DB_NAME"`
 		Host      string `envconfig:"DB_HOST"`
 		Port      int    `envconfig:"DB_PORT"`
 		User      string `envconfig:"DB_USER"`
-		Pass      string `envconfig:"DB_PASS"`
+		Password  string `envconfig:"DB_PASS"`
 		EnableSSL bool   `envconfig:"ENABLE_SSL"`
 	}
 }

@@ -8,10 +8,10 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/server ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./bin/server ./cmd/server/main.go
 
 FROM alpine
 COPY --from=builder ./project/bin/server /server
-COPY --from=builder ./project/migration /migration
+COPY --from=builder ./project/migrations /migrations
 
 CMD ["/server"]
