@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net"
-	"payment-service/pkg/constant"
+	"warehouse-service/pkg/constant"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -16,8 +16,8 @@ type Producer struct {
 }
 
 type IProducer interface {
-	PublishOrderRejectTopic(ctx context.Context, orderId string, note string)
-	PublishOrderPaidTopic(ctx context.Context, orderId string, data interface{})
+	PublishRefundTopic(ctx context.Context, orderId string, transactionId string, note string)
+	PublishOrderPreparedTopic(ctx context.Context, orderId string, cusId string)
 }
 
 func NewProducer() IProducer {
@@ -50,19 +50,28 @@ func (p Producer) publish(ctx context.Context, topic string, key string, data in
 	return nil
 }
 
-func (p Producer) PublishOrderRejectTopic(ctx context.Context, orderId string, note string) {
-	//publish mess to rollback, rejected order
-	data := OrderRejectedMessage{
-		OrderId: orderId,
-		Note:    note,
+func (p Producer) PublishRefundTopic(ctx context.Context, orderId string, transactionId string, note string) {
+	//publish mess to rollback, refund
+	data := RefundMessage{
+		OrderId:       orderId,
+		TransactionId: transactionId,
+		Note:          note,
 	}
 
-	err := p.publish(ctx, constant.OrderRejectedTopic, orderId, data)
+	err := p.publish(ctx, constant.RefundTopic, orderId, data)
 	if err != nil {
 		logrus.Error("Publish error: " + err.Error())
 	}
 }
-func (p Producer) PublishOrderPaidTopic(ctx context.Context, orderId string, data interface{}) {
-	//Update status for order and then update inventory
-	_ = p.publish(ctx, constant.OrderPaidTopic, orderId, data)
+func (p Producer) PublishOrderPreparedTopic(ctx context.Context, orderId string, cusId string) {
+	//publish mess to rollback, refund
+	data := PreparedMessage{
+		OrderId:    orderId,
+		CustomerId: cusId,
+	}
+
+	err := p.publish(ctx, constant.OrderPreparedTopic, orderId, data)
+	if err != nil {
+		logrus.Error("Publish error: " + err.Error())
+	}
 }

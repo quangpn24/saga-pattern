@@ -13,7 +13,8 @@ type Repository struct {
 
 //go:generate mockery --name IRepository --structname MockRepository --filename mock_db.go --output ./ --outpkg repository
 type IRepository interface {
-	CreateTodo(ctx context.Context, todo *model.Todo) error
+	GetProductById(ctx context.Context, id string) (*model.Product, error)
+	UpdateProducts(ctx context.Context, products []model.Product) error
 }
 
 func New(db *gorm.DB) IRepository {

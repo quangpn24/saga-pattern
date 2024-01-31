@@ -10,7 +10,8 @@ type UseCase struct {
 	repo repository.IRepository
 }
 type IUseCase interface {
-	PayTheBill(ctx context.Context, req kafka2.OrderCreatedMessage) error
+	PayTheBill(ctx context.Context, req kafka2.OrderCreatedMessage) (string, error)
+	Refund(ctx context.Context, transactionId string) error
 }
 
 func NewCustomerUseCase(repo repository.IRepository) IUseCase {

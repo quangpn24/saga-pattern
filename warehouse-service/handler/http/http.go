@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"warehouse-service/config"
 	"warehouse-service/handler/http/healthcheck"
-	"warehouse-service/handler/http/todo"
 	auth "warehouse-service/pkg/appmiddleware"
 	"warehouse-service/usecase"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -35,15 +33,14 @@ func NewHTTPHandler(uc *usecase.UseCase, cfg *config.Config) *echo.Echo {
 	e.Use(auth.NewAuthentication("header:Authorization", "Bearer", skipperPath).Middleware())
 
 	//validate
-	validate := validator.New()
+	//validate := validator.New()
 
 	// Health check use for microservice
 	healthcheck.Init(e.Group("/health-check"))
 
 	// APIs
-	api := e.Group("/api")
+	//api := e.Group("/api")
 
 	// customer route
-	todo.Init(api.Group("/todos"), uc, validate, cfg)
 	return e
 }

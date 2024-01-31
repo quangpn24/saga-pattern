@@ -1,4 +1,4 @@
-package todo
+package customer
 
 import (
 	"warehouse-service/config"
@@ -15,11 +15,11 @@ type Handler struct {
 }
 
 func Init(group *echo.Group, useCase *usecase.UseCase, validate *validator.Validate, cfg *config.Config) {
-	handler := &Handler{
-		useCase:  useCase,
-		validate: validate,
-		cfg:      cfg,
-	}
+	//handler := &Handler{
+	//	useCase:  useCase,
+	//	validate: validate,
+	//	cfg:      cfg,
+	//}
 
-	group.POST("", handler.CreateTodo)
+	//group.POST("", handler.)
 }

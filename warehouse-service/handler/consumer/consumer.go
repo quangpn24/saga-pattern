@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"order-service/config"
-	kafka2 "order-service/kafka"
-	"order-service/pkg/constant"
-	"order-service/usecase"
 	"time"
+	"warehouse-service/config"
+	kafka2 "warehouse-service/kafka"
+	"warehouse-service/model"
+	"warehouse-service/pkg/constant"
+	"warehouse-service/usecase"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -28,8 +29,8 @@ func NewConsumer(uc *usecase.UseCase, cfg *config.Config) IConsumer {
 	return &Consumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        []string{"localhost:9092", "localhost:9093", "localhost:9094"},
-			GroupTopics:    []string{constant.OrderRejectedTopic, constant.OrderPaidTopic, constant.OrderPreparedTopic},
-			GroupID:        "order-kafka-group",
+			GroupTopics:    []string{constant.OrderPaidTopic},
+			GroupID:        "warehouse-kafka-group",
 			MaxBytes:       10e6, // 10MB
 			CommitInterval: time.Second,
 		}),
@@ -45,25 +46,29 @@ func (c *Consumer) Consume() {
 			logrus.Fatal("err: " + err.Error())
 			break
 		}
+		ctx := context.Background()
+		producer := kafka2.NewProducer()
 		switch m.Topic {
-		case constant.OrderRejectedTopic:
-			var req kafka2.OrderRejectedMessage
-			_ = json.Unmarshal(m.Value, &req)
-			if err := c.uc.OrderUseCase.RejectOrder(context.Background(), req.OrderId, req.Note); err != nil {
-				logrus.Error("reject order fail: " + err.Error())
-			}
 		case constant.OrderPaidTopic:
 			var req kafka2.OrderPaidMessage
 			_ = json.Unmarshal(m.Value, &req)
-			if err := c.uc.OrderUseCase.UpdateStatus(context.Background(), req.OrderId, constant.ORDER_PAID); err != nil {
-				logrus.Error("update order fail: " + err.Error())
+
+			products := make([]model.Product, 0)
+			for _, item := range req.Items {
+				products = append(products, model.Product{
+					Id:       item.ProductId,
+					Quantity: item.Quantity,
+				})
 			}
-		case constant.OrderPreparedTopic:
-			var req kafka2.PreparedMessage
-			_ = json.Unmarshal(m.Value, &req)
-			if err := c.uc.OrderUseCase.UpdateStatus(context.Background(), req.OrderId, constant.ORDER_PREPARED); err != nil {
-				logrus.Error("update order fail: " + err.Error())
+
+			err := c.uc.ProductUC.UpdateQuantity(ctx, products)
+			if err != nil {
+				//refund
+				producer.PublishRefundTopic(ctx, req.OrderId, req.TransactionId, "Product preparation process failed")
+			} else {
+				producer.PublishOrderPreparedTopic(ctx, req.OrderId, req.CustomerId)
 			}
+
 		default:
 			fmt.Printf("message at offset %d: %s = %s. Topic: %v\n", m.Offset, string(m.Key), string(m.Value), m.Topic)
 		}

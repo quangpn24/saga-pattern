@@ -1,8 +1,8 @@
-package todo
+package product
 
 import (
 	"context"
-	"warehouse-service/payload"
+	"warehouse-service/model"
 	"warehouse-service/repository"
 )
 
@@ -10,10 +10,10 @@ type UseCase struct {
 	repo repository.IRepository
 }
 type IUseCase interface {
-	CreateTodo(ctx context.Context, req payload.CreateTodoRequest) error
+	UpdateQuantity(ctx context.Context, products []model.Product) error
 }
 
-func NewTodoUseCase(repo repository.IRepository) IUseCase {
+func NewProductUseCase(repo repository.IRepository) IUseCase {
 	return &UseCase{
 		repo: repo,
 	}

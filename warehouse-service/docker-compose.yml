@@ -1,14 +1,14 @@
 version: "3"
 services:
   warehouse-db:
-    container_name: warehouse-db
+    container_name: product-db
     image: postgres:latest
     restart: always
     environment:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: root
     ports:
-      - 5432:5432
+      - 5434:5432
     volumes:
       - data:/var/lib/postgresql/data
 volumes:

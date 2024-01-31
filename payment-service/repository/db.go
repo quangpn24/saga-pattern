@@ -37,3 +37,28 @@ func (r *Repository) GetCustomerById(ctx context.Context, id string) (*model.Cus
 	err := r.db.WithContext(ctx).Table(constant.CustomerTable).Where("id = ?", id).Take(&customer).Error
 	return customer, err
 }
+func (r *Repository) Refund(ctx context.Context, transId string) error {
+	tx := r.db.WithContext(ctx)
+	tx = tx.Begin()
+
+	//get amount
+	var trans model.Transaction
+	if err := tx.Table(constant.TransactionTable).Where("id = ?", transId).Select("*").Take(&trans).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	//delete transaction
+	if err := tx.Table(constant.TransactionTable).Where("id = ?", transId).Delete(&model.Transaction{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	//refund
+	if err := tx.Table(constant.CustomerTable).Where("id = ?", trans.CustomerId).
+		Updates(map[string]interface{}{"balance": gorm.Expr("balance + ?", trans.Amount)}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit().Error
+}

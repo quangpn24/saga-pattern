@@ -3,7 +3,11 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net"
+	"order-service/model"
+	"order-service/pkg/constant"
+	"time"
 
 	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
@@ -15,7 +19,7 @@ type Producer struct {
 }
 
 type IProducer interface {
-	Publish(ctx context.Context, topic string, key string, data interface{}) error
+	PublishOrderCreatedTopic(order model.Order)
 }
 
 func NewProducer() IProducer {
@@ -24,7 +28,7 @@ func NewProducer() IProducer {
 		balancer: &kafka.Hash{},
 	}
 }
-func (p Producer) Publish(ctx context.Context, topic string, key string, data interface{}) error {
+func (p Producer) publish(ctx context.Context, topic string, key string, data interface{}) error {
 	w := &kafka.Writer{
 		Addr:     p.addr,
 		Topic:    topic,
@@ -46,4 +50,38 @@ func (p Producer) Publish(ctx context.Context, topic string, key string, data in
 		logrus.Fatal("failed to close writer:", err)
 	}
 	return nil
+}
+
+func (p Producer) PublishOrderCreatedTopic(order model.Order) {
+	//publish mess -> payment service
+	data := OrderCreatedMessage{
+		OrderId:     order.ID,
+		CustomerId:  order.CustomerID,
+		TotalAmount: order.TotalAmount,
+	}
+	for _, item := range order.OrderItems {
+		data.Items = append(data.Items, OrderItemMessage{
+			ProductId: item.ProductId,
+			Quantity:  item.Quantity,
+		})
+	}
+
+	var err error
+	const retries = 5
+	for i := 0; i < retries; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// attempt to create topic prior to publishing the message
+		err = p.publish(ctx, constant.OrderCreatedTopic, order.ID, data)
+		if errors.Is(err, kafka.LeaderNotAvailable) || errors.Is(err, context.DeadlineExceeded) {
+			time.Sleep(time.Millisecond * 250)
+			continue
+		}
+
+		if err != nil {
+			logrus.Fatalf("unexpected error %v", err)
+		}
+		break
+	}
 }

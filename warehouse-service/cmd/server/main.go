@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"warehouse-service/config"
+	"warehouse-service/handler/consumer"
 	"warehouse-service/repository"
 	"warehouse-service/usecase"
 
@@ -44,7 +45,14 @@ func main() {
 	repo := repository.New(dbConn)
 	uc := usecase.New(repo)
 
-	executeServer(uc, cfg)
+	runConsumer(uc, cfg)
+	go executeServer(uc, cfg)
+}
+func runConsumer(uc *usecase.UseCase, cfg *config.Config) {
+	// to consume messages
+	fmt.Println("Start consumer")
+	con := consumer.NewConsumer(uc, cfg)
+	con.Consume()
 }
 func executeServer(useCase *usecase.UseCase, cfg *config.Config) {
 	fmt.Println(`cfg.Port: `, cfg.Port)

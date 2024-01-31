@@ -15,6 +15,7 @@ type Repository struct {
 type IRepository interface {
 	PayTheBill(ctx context.Context, trans model.Transaction) error
 	GetCustomerById(ctx context.Context, id string) (*model.Customer, error)
+	Refund(ctx context.Context, transId string) error
 }
 
 func New(db *gorm.DB) IRepository {

@@ -28,8 +28,8 @@ func NewConsumer(uc *usecase.UseCase, cfg *config.Config) IConsumer {
 	return &Consumer{
 		reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers:        []string{"localhost:9092", "localhost:9093", "localhost:9094"},
-			GroupTopics:    []string{constant.OrderCreatedTopic},
-			GroupID:        "order-kafka-group",
+			GroupTopics:    []string{constant.OrderCreatedTopic, constant.RefundTopic},
+			GroupID:        "payment-kafka-group",
 			MaxBytes:       10e6, // 10MB
 			CommitInterval: time.Second,
 		}),
@@ -46,34 +46,33 @@ func (c *Consumer) Consume() {
 			logrus.Fatal("err: " + err.Error())
 			break
 		}
+		producer := kafka2.NewProducer()
+
 		switch m.Topic {
 		case constant.OrderCreatedTopic:
 			//payment
 			var req kafka2.OrderCreatedMessage
 			_ = json.Unmarshal(m.Value, &req)
-			err := c.uc.CustomerUseCase.PayTheBill(ctx, req)
+			transId, err := c.uc.CustomerUseCase.PayTheBill(ctx, req)
+
 			if err != nil {
 				logrus.Error("Error during payment")
 
-				//publish mess to rollback, rejected order
-				data := kafka2.OrderRejectedMessage{
-					OrderId: req.OrderId,
-					Note:    "Error during payment",
-				}
-				producer := kafka2.NewProducer()
-				err := producer.Publish(ctx, constant.OrderRejectedTopic, req.OrderId, data)
-				if err != nil {
-					logrus.Error("Publish error: " + err.Error())
-				}
+				producer.PublishOrderRejectTopic(ctx, req.OrderId, "Payment fail")
 			} else {
-				//Update status for order and then update inventory
-				data := kafka2.OrderDoneStep{
-					OrderId: req.OrderId,
-					Status:  "ORDER_PAID",
+				data := kafka2.OrderPaidMessage{
+					OrderId:       req.OrderId,
+					CustomerId:    req.CustomerId,
+					TransactionId: transId,
+					Items:         req.Items,
 				}
-				producer := kafka2.NewProducer()
-				_ = producer.Publish(ctx, constant.OrderPaidTopic, req.OrderId, data)
+				producer.PublishOrderPaidTopic(ctx, req.OrderId, data)
 			}
+		case constant.RefundTopic:
+			var req kafka2.RefundMessage
+			_ = json.Unmarshal(m.Value, &req)
+			_ = c.uc.CustomerUseCase.Refund(ctx, req.TransactionId)
+			producer.PublishOrderRejectTopic(ctx, req.OrderId, req.Note)
 		default:
 			fmt.Printf("message at offset %d: %s = %s. Topic: %v\n", m.Offset, string(m.Key), string(m.Value), m.Topic)
 		}

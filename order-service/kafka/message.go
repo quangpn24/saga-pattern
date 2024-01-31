@@ -16,7 +16,11 @@ type OrderCreatedMessage struct {
 	Items       []OrderItemMessage `json:"items"`
 }
 
-type OrderDoneStep struct {
-	OrderId string `json:"order_id"`
-	Status  string `json:"status"`
+type OrderPaidMessage struct {
+	OrderId string             `json:"order_id"`
+	Items   []OrderItemMessage `json:"items"`
+}
+type PreparedMessage struct {
+	OrderId    string `json:"order_id"`
+	CustomerId string `json:"customer_id"`
 }
